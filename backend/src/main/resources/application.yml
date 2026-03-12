@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: bdspm
+
+  profiles:
+    active: dev
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:bdspm}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: BdspmHikariPool
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 300000        # 5 min — remove idle connections above minimum-idle
+      connection-timeout: 20000   # 20 sec — max wait to acquire a connection
+      max-lifetime: 1200000       # 20 min — recycle connections before Postgres kills them
+      keepalive-time: 60000       # 1 min — send keepalive ping to prevent firewall drops
+      connection-test-query: SELECT 1
+
+  jpa:
+    open-in-view: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+
+  sql:
+    init:
+      mode: never
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: openid, email, profile
+
+server:
+  port: 8080
+  servlet:
+    session:
+      cookie:
+        same-site: lax
+        secure: true

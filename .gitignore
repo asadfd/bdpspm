@@ -1,0 +1,21 @@
+.DS_Store
+Thumbs.db
+
+# local environment files
+.env
+.env.*
+
+# frontend build output
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/coverage/
+
+# backend build output
+backend/target/
+
+# editor and cache files
+.vscode/
+.idea/
+*.log

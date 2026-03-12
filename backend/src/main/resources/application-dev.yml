@@ -1,0 +1,43 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bdspm
+    username: postgres
+    password: password
+    hikari:
+      pool-name: BdspmHikariPool-Dev
+      minimum-idle: 2
+      maximum-pool-size: 5
+      idle-timeout: 300000        # 5 min
+      connection-timeout: 20000   # 20 sec
+      max-lifetime: 1200000       # 20 min
+      keepalive-time: 60000       # 1 min
+      connection-test-query: SELECT 1
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  sql:
+    init:
+      mode: never
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:CHANGE_ME_GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET:CHANGE_ME_GOOGLE_CLIENT_SECRET}
+
+server:
+  port: 8080
+  servlet:
+    session:
+      cookie:
+        same-site: lax
+        secure: false
