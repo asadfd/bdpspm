@@ -109,11 +109,16 @@ function PropertiesPageContent() {
   return (
     <div className="space-y-6">
       <div>
+        <div className="mb-4 flex flex-wrap gap-3">
+          <Link href="/dashboard" className="secondary-action action-button-sm">
+            Back to dashboard
+          </Link>
+        </div>
         <h1 className="section-title text-3xl font-semibold tracking-tight sm:text-4xl">
           Properties
         </h1>
         <p className="section-copy mt-2 max-w-2xl text-base">
-          Create or update properties here. The full property listing now lives on the dedicated records page.
+          Create or update properties here. Use the dashboard as the single monitoring overview for the portal.
         </p>
       </div>
 
@@ -136,7 +141,7 @@ function PropertiesPageContent() {
                   setFormName("");
                   router.replace("/properties");
                 }}
-                className="secondary-action rounded-full px-4 py-2 text-sm font-medium"
+                className="secondary-action action-button-sm"
               >
                 Cancel edit
               </button>
@@ -149,7 +154,7 @@ function PropertiesPageContent() {
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               placeholder="e.g. Central Residency"
-              className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
+              className="field-control"
             />
           </div>
 
@@ -163,7 +168,7 @@ function PropertiesPageContent() {
             <button
               type="submit"
               disabled={saving}
-              className="primary-action inline-flex flex-1 items-center justify-center rounded-full px-5 py-3 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-70"
+              className="primary-action action-button flex-1 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {saving ? "Saving..." : editingId == null ? "Create property" : "Update property"}
             </button>
@@ -176,7 +181,7 @@ function PropertiesPageContent() {
                     void handleDelete(current.id, current.name);
                   }
                 }}
-                className="rounded-full border border-rose-300 bg-white px-5 py-3 text-base font-semibold text-rose-700 hover:bg-rose-50"
+                className="danger-action action-button"
               >
                 Delete property
               </button>
@@ -185,25 +190,22 @@ function PropertiesPageContent() {
         </form>
 
         <div className="surface-card rounded-3xl p-6">
-          <h2 className="text-xl font-semibold text-slate-900">Property records moved</h2>
+          <h2 className="text-xl font-semibold text-slate-900">Property overview</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            The property list has been moved to a separate records page so this screen stays focused on create and edit actions.
+            This page stays focused on the property form while the dashboard remains the single place for monitoring the portal.
           </p>
           <div className="mt-5 space-y-3 text-sm text-slate-600">
             <p>
               {loading
                 ? "Loading latest property totals..."
-                : `${properties.length} property records are currently available in the records page.`}
+                : `${properties.length} property records are currently active in the portal.`}
             </p>
             <p>
-              Open the records page to review the table-style listing, edit existing rows, or delete a record from the central listing screen.
+              Use the dashboard for overview counts, then come back here whenever you need to create or update a property.
             </p>
           </div>
-          <Link
-            href="/records?tab=properties"
-            className="primary-action mt-6 inline-flex rounded-full px-5 py-3 text-base font-semibold"
-          >
-            Open property records
+          <Link href="/dashboard" className="primary-action action-button mt-6">
+            Open dashboard
           </Link>
         </div>
       </div>

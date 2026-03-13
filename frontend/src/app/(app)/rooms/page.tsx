@@ -124,11 +124,16 @@ function RoomsPageContent() {
   return (
     <div className="space-y-6">
       <div>
+        <div className="mb-4 flex flex-wrap gap-3">
+          <Link href="/dashboard" className="secondary-action action-button-sm">
+            Back to dashboard
+          </Link>
+        </div>
         <h1 className="section-title text-3xl font-semibold tracking-tight sm:text-4xl">
           Rooms
         </h1>
         <p className="section-copy mt-2 max-w-2xl text-base">
-          Create or update rooms here. The full room listing now lives on the separate records page.
+          Create or update rooms here. Use the dashboard as the single monitoring overview for the portal.
         </p>
       </div>
 
@@ -152,7 +157,7 @@ function RoomsPageContent() {
                   setPropertyId(String(properties[0]?.id ?? ""));
                   router.replace("/rooms");
                 }}
-                className="secondary-action rounded-full px-4 py-2 text-sm font-medium"
+                className="secondary-action action-button-sm"
               >
                 Cancel edit
               </button>
@@ -166,7 +171,7 @@ function RoomsPageContent() {
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 placeholder="e.g. A-101"
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
+                className="field-control"
               />
             </div>
             <div>
@@ -174,7 +179,7 @@ function RoomsPageContent() {
               <select
                 value={propertyId}
                 onChange={(e) => setPropertyId(e.target.value)}
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
+                className="field-control"
               >
                 <option value="">Select a property</option>
                 {properties.map((property) => (
@@ -196,7 +201,7 @@ function RoomsPageContent() {
             <button
               type="submit"
               disabled={saving}
-              className="primary-action inline-flex flex-1 items-center justify-center rounded-full px-5 py-3 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-70"
+              className="primary-action action-button flex-1 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {saving ? "Saving..." : editingId == null ? "Create room" : "Update room"}
             </button>
@@ -209,7 +214,7 @@ function RoomsPageContent() {
                     void handleDelete(current);
                   }
                 }}
-                className="rounded-full border border-rose-300 bg-white px-5 py-3 text-base font-semibold text-rose-700 hover:bg-rose-50"
+                className="danger-action action-button"
               >
                 Delete room
               </button>
@@ -218,25 +223,22 @@ function RoomsPageContent() {
         </form>
 
         <div className="surface-card rounded-3xl p-6">
-          <h2 className="text-xl font-semibold text-slate-900">Room records moved</h2>
+          <h2 className="text-xl font-semibold text-slate-900">Room overview</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Room listings are now on the central records page in a table layout inspired by your shared design.
+            This page stays focused on the room form while the dashboard remains the single place for monitoring the portal.
           </p>
           <div className="mt-5 space-y-3 text-sm text-slate-600">
             <p>
               {loading
                 ? "Loading latest room totals..."
-                : `${rooms.length} room records are currently available in the records page.`}
+                : `${rooms.length} room records are currently active in the portal.`}
             </p>
             <p>
-              Use the records page to browse rows, launch edits, or delete rooms while this page stays focused on the room form.
+              Use the dashboard for overview counts, then come back here whenever you need to create or update a room.
             </p>
           </div>
-          <Link
-            href="/records?tab=rooms"
-            className="primary-action mt-6 inline-flex rounded-full px-5 py-3 text-base font-semibold"
-          >
-            Open room records
+          <Link href="/dashboard" className="primary-action action-button mt-6">
+            Open dashboard
           </Link>
         </div>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   createPayment,
@@ -199,6 +200,11 @@ export default function PaymentsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
         <div>
+          <div className="mb-4 flex flex-wrap gap-3">
+            <Link href="/dashboard" className="secondary-action action-button-sm">
+              Back to dashboard
+            </Link>
+          </div>
           <h1 className="section-title text-3xl font-semibold tracking-tight sm:text-4xl">
             Payments
           </h1>
@@ -236,7 +242,7 @@ export default function PaymentsPage() {
                   setEditingId(null);
                   resetForm();
                 }}
-                className="secondary-action rounded-full px-4 py-2 text-sm font-medium"
+                className="secondary-action action-button-sm"
               >
                 Cancel edit
               </button>
@@ -252,7 +258,7 @@ export default function PaymentsPage() {
               value={form.txnNo}
               onChange={(e) => handleChange("txnNo", e.target.value)}
               placeholder="e.g. TXN-001"
-              className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
+              className="field-control"
             />
             <p className="mt-2 text-sm text-slate-600">
               This value must be unique. The backend rejects duplicates.
@@ -269,7 +275,7 @@ export default function PaymentsPage() {
                 value={form.amount}
                 onChange={(e) => handleChange("amount", e.target.value)}
                 placeholder="150.50"
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
+              className="field-control"
               />
             </div>
             <div>
@@ -280,7 +286,7 @@ export default function PaymentsPage() {
                 type="date"
                 value={form.paymentDate}
                 onChange={(e) => handleChange("paymentDate", e.target.value)}
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
+              className="field-control"
               />
             </div>
           </div>
@@ -293,7 +299,7 @@ export default function PaymentsPage() {
                 value={form.paymentMode}
                 onChange={(e) => handleChange("paymentMode", e.target.value)}
                 placeholder="Cash, UPI, Bank transfer"
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
+              className="field-control"
               />
             </div>
             <div>
@@ -301,7 +307,7 @@ export default function PaymentsPage() {
               <select
                 value={form.status}
                 onChange={(e) => handleChange("status", e.target.value as PaymentStatus)}
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
+                className="field-control"
               >
                 <option value="PENDING">PENDING</option>
                 <option value="VERIFIED">VERIFIED</option>
@@ -324,7 +330,7 @@ export default function PaymentsPage() {
                   }));
                 }}
                 disabled={inventoryLoading}
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                className="field-control"
               >
                 <option value="">Select a property</option>
                 {properties.map((property) => (
@@ -348,7 +354,7 @@ export default function PaymentsPage() {
                   }));
                 }}
                 disabled={inventoryLoading || !form.propertyId}
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                className="field-control"
               >
                 <option value="">Select a room</option>
                 {availableRooms.map((room) => (
@@ -365,7 +371,7 @@ export default function PaymentsPage() {
                 value={form.bedUnitId}
                 onChange={(e) => handleChange("bedUnitId", e.target.value)}
                 disabled={inventoryLoading || !form.roomId}
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                className="field-control"
               >
                 <option value="">Select a bed</option>
                 {availableBeds.map((bed) => (
@@ -386,7 +392,7 @@ export default function PaymentsPage() {
           <button
             type="submit"
             disabled={submitting || inventoryLoading}
-            className="primary-action inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-70"
+            className="primary-action action-button w-full disabled:cursor-not-allowed disabled:opacity-70"
           >
             {submitting ? "Saving..." : editingId == null ? "Create payment" : "Update payment"}
           </button>
@@ -487,14 +493,14 @@ export default function PaymentsPage() {
                             bedUnitId: payment.bedUnitId == null ? "" : String(payment.bedUnitId),
                           });
                         }}
-                        className="secondary-action rounded-full px-4 py-2 text-sm font-medium"
+                        className="secondary-action action-button-sm"
                       >
                         Edit
                       </button>
                       <button
                         type="button"
                         onClick={() => void handleDelete(payment)}
-                        className="rounded-full border border-rose-300 bg-white px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
+                        className="danger-action action-button-sm"
                       >
                         Delete
                       </button>

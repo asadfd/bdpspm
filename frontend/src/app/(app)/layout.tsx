@@ -40,8 +40,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navLinks = [
     { href: "/dashboard", label: "Dashboard" },
-    { href: "/inventory", label: "Inventory" },
-    { href: "/records", label: "Records" },
     { href: "/properties", label: "Properties" },
     { href: "/rooms", label: "Rooms" },
     { href: "/beds", label: "Beds" },
@@ -71,7 +69,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </span>
               <button
                 onClick={handleLogout}
-                className="secondary-action rounded-full px-4 py-2 text-sm font-medium"
+                className="secondary-action action-button-sm"
               >
                 Sign out
               </button>
@@ -116,9 +114,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="surface-card rounded-3xl p-4">
-            <p className="text-sm font-semibold text-slate-900">CRUD Areas</p>
+            <p className="text-sm font-semibold text-slate-900">Workspace</p>
             <p className="mt-1 text-sm text-slate-600">
-              Use these sections to review properties, rooms, beds, and payments.
+              Use `Dashboard` for monitoring and the management screens for create, edit, and delete actions.
             </p>
           </div>
 

@@ -79,6 +79,7 @@ function LoginCard() {
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="e.g. agent1"
                 autoComplete="username"
+                suppressHydrationWarning
                 className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
               />
             </div>

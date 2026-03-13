@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { listPayments, type PaymentDto } from "@/lib/api";
 import { useInventory } from "@/lib/useInventory";
 
 function BuildingIcon() {
@@ -42,6 +44,8 @@ function BedIcon() {
 
 export default function DashboardPage() {
   const { properties, rooms, beds, loading, error } = useInventory();
+  const [payments, setPayments] = useState<PaymentDto[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(true);
 
   const bedStatus = useMemo(() => {
     return beds.reduce(
@@ -64,7 +68,74 @@ export default function DashboardPage() {
     () => rooms.filter((room) => room.bedUnits.length === 0).length,
     [rooms],
   );
+  const availableProperties = useMemo(
+    () => properties.filter((property) => property.rooms.length > 0).length,
+    [properties],
+  );
   const occupiedRate = beds.length === 0 ? 0 : Math.round((bedStatus.occupied / beds.length) * 100);
+  const verifiedPayments = useMemo(
+    () => payments.filter((payment) => payment.status === "VERIFIED").length,
+    [payments],
+  );
+  const pendingPayments = useMemo(
+    () => payments.filter((payment) => payment.status === "PENDING").length,
+    [payments],
+  );
+  const totalPaymentAmount = useMemo(
+    () => payments.reduce((sum, payment) => sum + payment.amount, 0),
+    [payments],
+  );
+  const latestPayments = useMemo(() => payments.slice(0, 4), [payments]);
+
+  const managementCards = [
+    {
+      title: "Properties",
+      href: "/properties",
+      value: properties.length,
+      copy: "Create and maintain property masters with cleaner forms.",
+    },
+    {
+      title: "Rooms",
+      href: "/rooms",
+      value: rooms.length,
+      copy: "Map rooms under the correct property and keep allocations tidy.",
+    },
+    {
+      title: "Beds",
+      href: "/beds",
+      value: beds.length,
+      copy: "Manage bed units and update their latest occupancy status.",
+    },
+    {
+      title: "Payments",
+      href: "/payments",
+      value: null,
+      copy: "Record payment transactions against the linked property, room, and bed.",
+    },
+  ];
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPayments() {
+      try {
+        setPaymentsLoading(true);
+        const data = await listPayments();
+        if (active) {
+          setPayments(data);
+        }
+      } finally {
+        if (active) {
+          setPaymentsLoading(false);
+        }
+      }
+    }
+
+    void loadPayments();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -100,7 +171,7 @@ export default function DashboardPage() {
                   </p>
                   <p className="mt-3 text-4xl font-semibold text-slate-900">{properties.length}</p>
                   <p className="mt-2 text-sm text-slate-600">
-                    {emptyProperties} properties do not have rooms yet.
+                    {availableProperties} active and {emptyProperties} still waiting for room mapping.
                   </p>
                 </div>
                 <div className="rounded-2xl bg-violet-50 p-3 text-violet-700">
@@ -200,6 +271,132 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="surface-card rounded-3xl p-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Management
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                  Open the main work areas from one place
+                </h2>
+              </div>
+              <div className="data-pill border border-slate-200 bg-white text-slate-700">
+                Dashboard is the single overview page
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {managementCards.map((card) => (
+                <div key={card.href} className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    {card.title}
+                  </p>
+                  {card.value != null && (
+                    <p className="mt-3 text-3xl font-semibold text-slate-900">{card.value}</p>
+                  )}
+                  <p className={`text-sm text-slate-600 ${card.value != null ? "mt-2" : "mt-3"}`}>
+                    {card.copy}
+                  </p>
+                  <Link href={card.href} className="primary-action action-button mt-5 w-full">
+                    Open {card.title}
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="surface-card rounded-3xl p-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Payments
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                  Payment dashboard
+                </h2>
+              </div>
+              <Link href="/payments" className="secondary-action action-button-sm">
+                Open payments
+              </Link>
+            </div>
+
+            {paymentsLoading ? (
+              <div className="mt-5 text-sm text-slate-600">Loading payment overview...</div>
+            ) : (
+              <>
+                <div className="mt-5 grid gap-4 md:grid-cols-3">
+                  <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                      Verified
+                    </p>
+                    <p className="mt-3 text-3xl font-semibold text-emerald-900">{verifiedPayments}</p>
+                    <p className="mt-2 text-sm text-emerald-800">Payments fully confirmed.</p>
+                  </div>
+                  <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.14em] text-amber-700">
+                      Pending
+                    </p>
+                    <p className="mt-3 text-3xl font-semibold text-amber-900">{pendingPayments}</p>
+                    <p className="mt-2 text-sm text-amber-800">Payments awaiting verification.</p>
+                  </div>
+                  <div className="rounded-3xl border border-cyan-200 bg-cyan-50 p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.14em] text-cyan-700">
+                      Total amount
+                    </p>
+                    <p className="mt-3 text-3xl font-semibold text-cyan-900">
+                      {totalPaymentAmount.toFixed(2)}
+                    </p>
+                    <p className="mt-2 text-sm text-cyan-800">Sum of all logged payment values.</p>
+                  </div>
+                </div>
+
+                <div className="mt-5 space-y-3">
+                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Recent payments
+                  </p>
+                  {latestPayments.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-600">
+                      No payments logged yet.
+                    </div>
+                  ) : (
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {latestPayments.map((payment) => (
+                        <div
+                          key={payment.id}
+                          className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-semibold text-slate-900">{payment.txnNo}</p>
+                              <p className="mt-1 text-sm text-slate-600">
+                                {payment.propertyName ?? "No property"} / {payment.roomName ?? "No room"} /
+                                {" "}Bed #{payment.bedUnitId ?? "-"}
+                              </p>
+                            </div>
+                            <span
+                              className={`data-pill border ${
+                                payment.status === "VERIFIED"
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                                  : "border-amber-200 bg-amber-50 text-amber-800"
+                              }`}
+                            >
+                              {payment.status}
+                            </span>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
+                            <span>{payment.paymentDate}</span>
+                            <span className="font-semibold text-slate-900">{payment.amount.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </>
       )}

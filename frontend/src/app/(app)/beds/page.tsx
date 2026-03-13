@@ -132,11 +132,16 @@ function BedsPageContent() {
   return (
     <div className="space-y-6">
       <div>
+        <div className="mb-4 flex flex-wrap gap-3">
+          <Link href="/dashboard" className="secondary-action action-button-sm">
+            Back to dashboard
+          </Link>
+        </div>
         <h1 className="section-title text-3xl font-semibold tracking-tight sm:text-4xl">
           Beds
         </h1>
         <p className="section-copy mt-2 max-w-2xl text-base">
-          Create or update bed units here. The full bed listing now lives on the separate records page.
+          Create or update bed units here. Use the dashboard as the single monitoring overview for the portal.
         </p>
       </div>
 
@@ -160,7 +165,7 @@ function BedsPageContent() {
                   setRoomId(String(rooms[0]?.id ?? ""));
                   router.replace("/beds");
                 }}
-                className="secondary-action rounded-full px-4 py-2 text-sm font-medium"
+                className="secondary-action action-button-sm"
               >
                 Cancel edit
               </button>
@@ -173,7 +178,7 @@ function BedsPageContent() {
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as BedUnitStatus)}
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
+                className="field-control"
               >
                 <option value="AVAILABLE">AVAILABLE</option>
                 <option value="OCCUPIED">OCCUPIED</option>
@@ -185,7 +190,7 @@ function BedsPageContent() {
               <select
                 value={roomId}
                 onChange={(e) => setRoomId(e.target.value)}
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
+                className="field-control"
               >
                 <option value="">Select a room</option>
                 {rooms.map((room) => (
@@ -207,7 +212,7 @@ function BedsPageContent() {
             <button
               type="submit"
               disabled={saving}
-              className="primary-action inline-flex flex-1 items-center justify-center rounded-full px-5 py-3 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-70"
+              className="primary-action action-button flex-1 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {saving ? "Saving..." : editingId == null ? "Create bed" : "Update bed"}
             </button>
@@ -220,7 +225,7 @@ function BedsPageContent() {
                     void handleDelete(current);
                   }
                 }}
-                className="rounded-full border border-rose-300 bg-white px-5 py-3 text-base font-semibold text-rose-700 hover:bg-rose-50"
+                className="danger-action action-button"
               >
                 Delete bed
               </button>
@@ -229,25 +234,22 @@ function BedsPageContent() {
         </form>
 
         <div className="surface-card rounded-3xl p-6">
-          <h2 className="text-xl font-semibold text-slate-900">Bed records moved</h2>
+          <h2 className="text-xl font-semibold text-slate-900">Bed overview</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Bed listings are now available on the dedicated records page with the cleaner table format you requested.
+            This page stays focused on the bed form while the dashboard remains the single place for monitoring the portal.
           </p>
           <div className="mt-5 space-y-3 text-sm text-slate-600">
             <p>
               {loading
                 ? "Loading latest bed totals..."
-                : `${beds.length} bed records are currently available in the records page.`}
+                : `${beds.length} bed records are currently active in the portal.`}
             </p>
             <p>
-              Open the records page to browse rows, launch edits, or delete beds from the centralized listing screen.
+              Use the dashboard for overview counts, then come back here whenever you need to create or update a bed unit.
             </p>
           </div>
-          <Link
-            href="/records?tab=beds"
-            className="primary-action mt-6 inline-flex rounded-full px-5 py-3 text-base font-semibold"
-          >
-            Open bed records
+          <Link href="/dashboard" className="primary-action action-button mt-6">
+            Open dashboard
           </Link>
         </div>
       </div>
