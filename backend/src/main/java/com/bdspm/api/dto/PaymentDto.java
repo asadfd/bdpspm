@@ -8,16 +8,19 @@ import java.time.OffsetDateTime;
 
 public record PaymentDto(
         Long id,
-        String txnNo,
-        BigDecimal amount,
+        Long tenancyContractId,
+        String tenantName,
         LocalDate paymentDate,
-        String paymentMode,
+        LocalDate dueDate,
+        BigDecimal amountPaid,
+        BigDecimal amountPending,
         PaymentStatus status,
         Long propertyId,
         String propertyName,
         Long roomId,
         String roomName,
         Long bedUnitId,
+        String contractStatus,
         Long createdByUserId,
         String createdByUsername,
         OffsetDateTime createdAt

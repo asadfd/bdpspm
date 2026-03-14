@@ -10,12 +10,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record PaymentRequest(
-        @NotBlank @Size(max = 100) String txnNo,
-        @NotNull @DecimalMin("0.01") BigDecimal amount,
         @NotNull LocalDate paymentDate,
-        @Size(max = 50) String paymentMode,
+        @NotNull LocalDate dueDate,
+        @NotNull @DecimalMin("0.00") BigDecimal amountPaid,
+        @NotNull @DecimalMin("0.00") BigDecimal amountPending,
         PaymentStatus status,
-        @NotNull Long propertyId,
-        @NotNull Long roomId,
-        @NotNull Long bedUnitId
+        @NotNull Long tenancyContractId
 ) {}

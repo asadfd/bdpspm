@@ -1,5 +1,6 @@
 export type BedUnitStatus = "AVAILABLE" | "OCCUPIED" | "NOTICE" | string;
-export type PaymentStatus = "PENDING" | "VERIFIED" | string;
+export type TenancyContractStatus = "ACTIVE" | "NOTICE" | "ENDED" | string;
+export type PaymentStatus = "PENDING" | "HALF_PAID" | "PAID" | "OVERDUE" | string;
 
 export interface BedUnitDto {
   id: number;
@@ -43,18 +44,41 @@ export interface BedUnitManagementDto {
 
 export interface PaymentDto {
   id: number;
-  txnNo: string;
-  amount: number;
+  tenancyContractId: number | null;
+  tenantName: string | null;
   paymentDate: string;
-  paymentMode: string | null;
+  dueDate: string;
+  amountPaid: number;
+  amountPending: number;
   status: PaymentStatus;
   propertyId: number | null;
   propertyName: string | null;
   roomId: number | null;
   roomName: string | null;
   bedUnitId: number | null;
+  contractStatus: string | null;
   createdByUserId: number;
   createdByUsername: string;
+  createdAt: string;
+}
+
+export interface TenancyContractDto {
+  id: number;
+  tenantName: string;
+  tenantGovernmentId: string;
+  tenantPhoneNumber: string;
+  propertyId: number;
+  propertyName: string;
+  roomId: number;
+  roomName: string;
+  bedUnitId: number;
+  bedStatus: BedUnitStatus;
+  rentAmount: number;
+  startDate: string;
+  endDate: string;
+  status: TenancyContractStatus;
+  endedImmediately: boolean;
+  actualEndDate: string | null;
   createdAt: string;
 }
 
@@ -73,14 +97,24 @@ export interface BedUnitRequest {
 }
 
 export interface PaymentRequest {
-  txnNo: string;
-  amount: number;
   paymentDate: string;
-  paymentMode: string | null;
+  dueDate: string;
+  amountPaid: number;
+  amountPending: number;
   status?: PaymentStatus;
+  tenancyContractId: number;
+}
+
+export interface TenancyContractRequest {
+  tenantName: string;
+  tenantGovernmentId: string;
+  tenantPhoneNumber: string;
   propertyId: number;
   roomId: number;
   bedUnitId: number;
+  rentAmount: number;
+  startDate: string;
+  endDate: string;
 }
 
 export interface CurrentUser {
@@ -374,6 +408,44 @@ export async function listPayments(): Promise<PaymentDto[]> {
   });
 }
 
+export async function listContracts(): Promise<TenancyContractDto[]> {
+  return request<TenancyContractDto[]>("/api/contracts", {
+    method: "GET",
+    headers: buildHeaders(),
+  });
+}
+
+export async function createContract(payload: TenancyContractRequest): Promise<TenancyContractDto> {
+  return request<TenancyContractDto>("/api/contracts", {
+    method: "POST",
+    headers: buildHeaders(true),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateContract(id: number, payload: TenancyContractRequest): Promise<TenancyContractDto> {
+  return request<TenancyContractDto>(`/api/contracts/${id}`, {
+    method: "PUT",
+    headers: buildHeaders(true),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function endContract(id: number, immediateEnd: boolean): Promise<TenancyContractDto> {
+  return request<TenancyContractDto>(`/api/contracts/${id}/end`, {
+    method: "POST",
+    headers: buildHeaders(true),
+    body: JSON.stringify({ immediateEnd }),
+  });
+}
+
+export async function deleteContract(id: number): Promise<void> {
+  return requestVoid(`/api/contracts/${id}`, {
+    method: "DELETE",
+    headers: buildHeaders(),
+  });
+}
+
 export async function createPayment(payload: PaymentRequest): Promise<PaymentDto> {
   return request<PaymentDto>("/api/payments", {
     method: "POST",
@@ -398,12 +470,11 @@ export async function deletePayment(id: number): Promise<void> {
 }
 
 export async function logPayment(payload: {
-  txnNo: string;
-  amount: number;
   date: string;
-  propertyId: number;
-  roomId: number;
-  bedUnitId: number;
+  dueDate: string;
+  amountPaid: number;
+  amountPending: number;
+  tenancyContractId: number;
 }): Promise<PaymentDto> {
   return request<PaymentDto>("/api/payments/log", {
     method: "POST",

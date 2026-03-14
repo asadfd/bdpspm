@@ -43,6 +43,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: "/properties", label: "Properties" },
     { href: "/rooms", label: "Rooms" },
     { href: "/beds", label: "Beds" },
+    { href: "/contracts", label: "Contracts" },
     { href: "/payments", label: "Payments" },
   ];
 

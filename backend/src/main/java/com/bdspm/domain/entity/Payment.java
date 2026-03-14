@@ -1,9 +1,6 @@
 package com.bdspm.domain.entity;
 
 import com.bdspm.domain.enums.PaymentStatus;
-import com.bdspm.domain.entity.BedUnit;
-import com.bdspm.domain.entity.Property;
-import com.bdspm.domain.entity.Room;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -58,8 +55,21 @@ public class Payment {
     private BedUnit bedUnit;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenancy_contract_id")
+    private TenancyContract tenancyContract;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_user_id", nullable = false)
     private User createdBy;
+
+    @Column(name = "due_date", nullable = false)
+    private LocalDate dueDate;
+
+    @Column(name = "amount_paid", nullable = false, precision = 19, scale = 4)
+    private BigDecimal amountPaid;
+
+    @Column(name = "amount_pending", nullable = false, precision = 19, scale = 4)
+    private BigDecimal amountPending;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();
@@ -156,6 +166,38 @@ public class Payment {
 
     public void setCreatedBy(User createdBy) {
         this.createdBy = createdBy;
+    }
+
+    public TenancyContract getTenancyContract() {
+        return tenancyContract;
+    }
+
+    public void setTenancyContract(TenancyContract tenancyContract) {
+        this.tenancyContract = tenancyContract;
+    }
+
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(LocalDate dueDate) {
+        this.dueDate = dueDate;
+    }
+
+    public BigDecimal getAmountPaid() {
+        return amountPaid;
+    }
+
+    public void setAmountPaid(BigDecimal amountPaid) {
+        this.amountPaid = amountPaid;
+    }
+
+    public BigDecimal getAmountPending() {
+        return amountPending;
+    }
+
+    public void setAmountPending(BigDecimal amountPending) {
+        this.amountPending = amountPending;
     }
 
     public OffsetDateTime getCreatedAt() {

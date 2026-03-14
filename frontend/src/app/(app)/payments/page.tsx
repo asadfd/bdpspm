@@ -3,46 +3,51 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  listContracts,
   createPayment,
   deletePayment,
   listPayments,
   updatePayment,
   type PaymentDto,
   type PaymentStatus,
+  type TenancyContractDto,
 } from "@/lib/api";
-import { useInventory } from "@/lib/useInventory";
 
 interface FormState {
-  txnNo: string;
-  amount: string;
+  tenancyContractId: string;
   paymentDate: string;
-  paymentMode: string;
+  dueDate: string;
+  amountPaid: string;
+  amountPending: string;
   status: PaymentStatus;
-  propertyId: string;
-  roomId: string;
-  bedUnitId: string;
 }
 
 function paymentStatusClass(status: PaymentStatus) {
-  return status === "VERIFIED"
-    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-    : "border-amber-200 bg-amber-50 text-amber-800";
+  if (status === "PAID") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  }
+  if (status === "HALF_PAID") {
+    return "border-amber-200 bg-amber-50 text-amber-800";
+  }
+  if (status === "OVERDUE") {
+    return "border-rose-200 bg-rose-50 text-rose-800";
+  }
+  return "border-slate-200 bg-slate-50 text-slate-700";
 }
 
 export default function PaymentsPage() {
-  const { properties, rooms, beds, loading: inventoryLoading, error: inventoryError } = useInventory();
   const [form, setForm] = useState<FormState>({
-    txnNo: "",
-    amount: "",
+    tenancyContractId: "",
     paymentDate: new Date().toISOString().slice(0, 10),
-    paymentMode: "",
+    dueDate: new Date().toISOString().slice(0, 10),
+    amountPaid: "",
+    amountPending: "",
     status: "PENDING",
-    propertyId: "",
-    roomId: "",
-    bedUnitId: "",
   });
   const [payments, setPayments] = useState<PaymentDto[]>([]);
+  const [contracts, setContracts] = useState<TenancyContractDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [contractsLoading, setContractsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -50,14 +55,12 @@ export default function PaymentsPage() {
 
   function resetForm() {
     setForm({
-      txnNo: "",
-      amount: "",
+      tenancyContractId: "",
       paymentDate: new Date().toISOString().slice(0, 10),
-      paymentMode: "",
+      dueDate: new Date().toISOString().slice(0, 10),
+      amountPaid: "",
+      amountPending: "",
       status: "PENDING",
-      propertyId: "",
-      roomId: "",
-      bedUnitId: "",
     });
   }
 
@@ -77,38 +80,54 @@ export default function PaymentsPage() {
     }
   }
 
+  async function loadContracts() {
+    try {
+      setContractsLoading(true);
+      setError(null);
+      setContracts(await listContracts());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load contracts.");
+    } finally {
+      setContractsLoading(false);
+    }
+  }
+
   useEffect(() => {
     void loadPayments();
+    void loadContracts();
   }, []);
 
-  const availableRooms = useMemo(() => {
-    const selectedPropertyId = Number(form.propertyId);
-    if (!Number.isFinite(selectedPropertyId) || selectedPropertyId <= 0) {
-      return [];
-    }
-    return rooms.filter((room) => room.propertyId === selectedPropertyId);
-  }, [form.propertyId, rooms]);
+  const availableContracts = useMemo(() => {
+    const selectedContractId = Number(form.tenancyContractId);
+    return contracts.filter(
+      (contract) =>
+        contract.status !== "ENDED" ||
+        (Number.isFinite(selectedContractId) && contract.id === selectedContractId),
+    );
+  }, [contracts, form.tenancyContractId]);
 
-  const availableBeds = useMemo(() => {
-    const selectedRoomId = Number(form.roomId);
-    if (!Number.isFinite(selectedRoomId) || selectedRoomId <= 0) {
-      return [];
+  const selectedContract = useMemo(() => {
+    const selectedContractId = Number(form.tenancyContractId);
+    if (!Number.isFinite(selectedContractId) || selectedContractId <= 0) {
+      return null;
     }
-    return beds.filter((bed) => bed.roomId === selectedRoomId);
-  }, [beds, form.roomId]);
+    return contracts.find((contract) => contract.id === selectedContractId) ?? null;
+  }, [contracts, form.tenancyContractId]);
 
   const filteredPayments = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return payments;
     return payments.filter(
       (payment) =>
-        payment.txnNo.toLowerCase().includes(query) ||
+        String(payment.id).includes(query) ||
+        (payment.tenantName ?? "").toLowerCase().includes(query) ||
         payment.status.toLowerCase().includes(query) ||
+        (payment.contractStatus ?? "").toLowerCase().includes(query) ||
         payment.createdByUsername.toLowerCase().includes(query) ||
-        (payment.paymentMode ?? "").toLowerCase().includes(query) ||
         (payment.propertyName ?? "").toLowerCase().includes(query) ||
         (payment.roomName ?? "").toLowerCase().includes(query) ||
-        String(payment.bedUnitId ?? "").includes(query),
+        String(payment.bedUnitId ?? "").includes(query) ||
+        String(payment.tenancyContractId ?? "").includes(query),
     );
   }, [payments, search]);
 
@@ -116,14 +135,20 @@ export default function PaymentsPage() {
     e.preventDefault();
     setError(null);
 
-    if (!form.txnNo.trim()) {
-      setError("Transaction number is required.");
+    const contractId = Number(form.tenancyContractId);
+    if (!Number.isFinite(contractId) || contractId <= 0) {
+      setError("Please select a tenancy contract.");
       return;
     }
 
-    const amountNumber = Number(form.amount);
-    if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
-      setError("Amount must be a positive number.");
+    const amountPaid = Number(form.amountPaid);
+    const amountPending = Number(form.amountPending);
+    if (!Number.isFinite(amountPaid) || amountPaid < 0) {
+      setError("Amount paid must be zero or a positive number.");
+      return;
+    }
+    if (!Number.isFinite(amountPending) || amountPending < 0) {
+      setError("Amount pending must be zero or a positive number.");
       return;
     }
 
@@ -131,35 +156,20 @@ export default function PaymentsPage() {
       setError("Payment date is required.");
       return;
     }
-
-    const propertyId = Number(form.propertyId);
-    const roomId = Number(form.roomId);
-    const bedUnitId = Number(form.bedUnitId);
-
-    if (!Number.isFinite(propertyId) || propertyId <= 0) {
-      setError("Please select a property for this payment.");
-      return;
-    }
-    if (!Number.isFinite(roomId) || roomId <= 0) {
-      setError("Please select a room for this payment.");
-      return;
-    }
-    if (!Number.isFinite(bedUnitId) || bedUnitId <= 0) {
-      setError("Please select a bed for this payment.");
+    if (!form.dueDate) {
+      setError("Due date is required.");
       return;
     }
 
     setSubmitting(true);
     try {
       const payload = {
-        txnNo: form.txnNo.trim(),
-        amount: amountNumber,
         paymentDate: form.paymentDate,
-        paymentMode: form.paymentMode.trim() || null,
+        dueDate: form.dueDate,
+        amountPaid,
+        amountPending,
         status: form.status,
-        propertyId,
-        roomId,
-        bedUnitId,
+        tenancyContractId: contractId,
       };
 
       if (editingId == null) {
@@ -179,7 +189,7 @@ export default function PaymentsPage() {
   }
 
   async function handleDelete(payment: PaymentDto) {
-    if (!window.confirm(`Delete payment "${payment.txnNo}"?`)) {
+    if (!window.confirm(`Delete payment #${payment.id}?`)) {
       return;
     }
 
@@ -209,7 +219,7 @@ export default function PaymentsPage() {
             Payments
           </h1>
           <p className="section-copy mt-2 max-w-3xl text-base">
-            Create, edit, and delete payment entries while linking each payment to the exact property, room, and bed it belongs to.
+            Record contract-wise payments with due date, paid amount, pending amount, and collection status.
           </p>
         </div>
         <div className="data-pill border border-emerald-200 bg-emerald-50 text-emerald-800">
@@ -217,12 +227,6 @@ export default function PaymentsPage() {
           Connected to /api/payments
         </div>
       </div>
-
-      {inventoryError && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {inventoryError}
-        </div>
-      )}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
         <form onSubmit={handleSubmit} className="surface-card space-y-5 rounded-3xl p-6">
@@ -232,7 +236,7 @@ export default function PaymentsPage() {
                 {editingId == null ? "Create payment" : "Edit payment"}
               </h2>
               <p className="mt-1 text-sm text-slate-600">
-                Keep transaction details up to date and attach every payment to the correct stay location.
+                Choose a tenancy contract first, then store paid and pending amounts against that contract.
               </p>
             </div>
             {editingId != null && (
@@ -250,32 +254,55 @@ export default function PaymentsPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-800">
-              Transaction number
-            </label>
-            <input
-              type="text"
-              value={form.txnNo}
-              onChange={(e) => handleChange("txnNo", e.target.value)}
-              placeholder="e.g. TXN-001"
+            <label className="mb-2 block text-sm font-semibold text-slate-800">Tenancy contract</label>
+            <select
+              value={form.tenancyContractId}
+              onChange={(e) => handleChange("tenancyContractId", e.target.value)}
+              disabled={contractsLoading}
               className="field-control"
-            />
-            <p className="mt-2 text-sm text-slate-600">
-              This value must be unique. The backend rejects duplicates.
-            </p>
+            >
+              <option value="">Select a contract</option>
+              {availableContracts.map((contract) => (
+                <option key={contract.id} value={contract.id}>
+                  Contract #{contract.id} - {contract.tenantName} - {contract.propertyName} / {contract.roomName} / Bed #{contract.bedUnitId}
+                </option>
+              ))}
+            </select>
           </div>
+
+          {selectedContract && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Selected contract
+              </p>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">{selectedContract.tenantName}</p>
+                  <p className="text-sm text-slate-600">
+                    {selectedContract.propertyName} / {selectedContract.roomName} / Bed #{selectedContract.bedUnitId}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Rent {selectedContract.rentAmount.toFixed(2)}</p>
+                  <p className="text-sm text-slate-600">
+                    {selectedContract.startDate} to {selectedContract.endDate} · {selectedContract.status}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid gap-5 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-800">Amount</label>
+              <label className="mb-2 block text-sm font-semibold text-slate-800">Amount paid</label>
               <input
                 type="number"
-                min="0.01"
+                min="0"
                 step="0.01"
-                value={form.amount}
-                onChange={(e) => handleChange("amount", e.target.value)}
-                placeholder="150.50"
-              className="field-control"
+                value={form.amountPaid}
+                onChange={(e) => handleChange("amountPaid", e.target.value)}
+                placeholder="500.00"
+                className="field-control"
               />
             </div>
             <div>
@@ -286,20 +313,22 @@ export default function PaymentsPage() {
                 type="date"
                 value={form.paymentDate}
                 onChange={(e) => handleChange("paymentDate", e.target.value)}
-              className="field-control"
+                className="field-control"
               />
             </div>
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-800">Payment mode</label>
+              <label className="mb-2 block text-sm font-semibold text-slate-800">Amount pending</label>
               <input
-                type="text"
-                value={form.paymentMode}
-                onChange={(e) => handleChange("paymentMode", e.target.value)}
-                placeholder="Cash, UPI, Bank transfer"
-              className="field-control"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.amountPending}
+                onChange={(e) => handleChange("amountPending", e.target.value)}
+                placeholder="1000.00"
+                className="field-control"
               />
             </div>
             <div>
@@ -310,77 +339,21 @@ export default function PaymentsPage() {
                 className="field-control"
               >
                 <option value="PENDING">PENDING</option>
-                <option value="VERIFIED">VERIFIED</option>
+                <option value="HALF_PAID">HALF_PAID</option>
+                <option value="PAID">PAID</option>
+                <option value="OVERDUE">OVERDUE</option>
               </select>
             </div>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-3">
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-800">Property</label>
-              <select
-                value={form.propertyId}
-                onChange={(e) => {
-                  const propertyId = e.target.value;
-                  setForm((prev) => ({
-                    ...prev,
-                    propertyId,
-                    roomId: "",
-                    bedUnitId: "",
-                  }));
-                }}
-                disabled={inventoryLoading}
-                className="field-control"
-              >
-                <option value="">Select a property</option>
-                {properties.map((property) => (
-                  <option key={property.id} value={property.id}>
-                    {property.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-800">Room</label>
-              <select
-                value={form.roomId}
-                onChange={(e) => {
-                  const roomId = e.target.value;
-                  setForm((prev) => ({
-                    ...prev,
-                    roomId,
-                    bedUnitId: "",
-                  }));
-                }}
-                disabled={inventoryLoading || !form.propertyId}
-                className="field-control"
-              >
-                <option value="">Select a room</option>
-                {availableRooms.map((room) => (
-                  <option key={room.id} value={room.id}>
-                    {room.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-800">Bed</label>
-              <select
-                value={form.bedUnitId}
-                onChange={(e) => handleChange("bedUnitId", e.target.value)}
-                disabled={inventoryLoading || !form.roomId}
-                className="field-control"
-              >
-                <option value="">Select a bed</option>
-                {availableBeds.map((bed) => (
-                  <option key={bed.id} value={bed.id}>
-                    Bed #{bed.id} - {bed.status}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-800">Due date</label>
+            <input
+              type="date"
+              value={form.dueDate}
+              onChange={(e) => handleChange("dueDate", e.target.value)}
+              className="field-control"
+            />
           </div>
 
           {error && (
@@ -391,7 +364,7 @@ export default function PaymentsPage() {
 
           <button
             type="submit"
-            disabled={submitting || inventoryLoading}
+            disabled={submitting || contractsLoading}
             className="primary-action action-button w-full disabled:cursor-not-allowed disabled:opacity-70"
           >
             {submitting ? "Saving..." : editingId == null ? "Create payment" : "Update payment"}
@@ -406,14 +379,14 @@ export default function PaymentsPage() {
                   Payment list
                 </p>
                 <p className="mt-1 text-sm text-slate-600">
-                  Search by transaction, location, status, mode, bed, or agent.
+                  Search by payment ID, contract, tenant, room, bed, status, or agent.
                 </p>
               </div>
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search payments"
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100 sm:max-w-xs"
+                className="field-control sm:max-w-xs"
               />
             </div>
 
@@ -429,9 +402,9 @@ export default function PaymentsPage() {
                   <div key={payment.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div>
-                        <h3 className="text-lg font-semibold text-slate-900">{payment.txnNo}</h3>
+                        <h3 className="text-lg font-semibold text-slate-900">Payment #{payment.id}</h3>
                         <p className="mt-1 text-sm text-slate-600">
-                          {payment.paymentDate} · {payment.paymentMode ?? "No mode"} · Amount {payment.amount.toFixed(2)}
+                          Contract #{payment.tenancyContractId ?? "-"} · {payment.tenantName ?? "No tenant"} · {payment.paymentDate}
                         </p>
                       </div>
                       <span className={`data-pill border ${paymentStatusClass(payment.status)}`}>
@@ -442,32 +415,28 @@ export default function PaymentsPage() {
                     <div className="mt-4 grid gap-3 md:grid-cols-2">
                       <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                          Linked location
+                          Linked contract
                         </p>
                         <p className="mt-2 text-sm font-medium text-slate-900">
                           {payment.propertyName ?? "Unlinked"} / {payment.roomName ?? "Unlinked"} / Bed #{payment.bedUnitId ?? "-"}
                         </p>
+                        <p className="text-sm text-slate-600">Contract status: {payment.contractStatus ?? "Unknown"}</p>
                       </div>
                       <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                          Recorded by
+                          Amount tracking
                         </p>
                         <p className="mt-2 text-sm font-medium text-slate-900">
-                          {payment.createdByUsername}
+                          Paid {payment.amountPaid.toFixed(2)} · Pending {payment.amountPending.toFixed(2)}
                         </p>
-                        <p className="text-sm text-slate-600">User ID {payment.createdByUserId}</p>
+                        <p className="text-sm text-slate-600">Due on {payment.dueDate}</p>
                       </div>
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {payment.propertyId != null && (
+                      {payment.tenancyContractId != null && (
                         <span className="data-pill border border-violet-200 bg-violet-50 text-violet-800">
-                          Property ID {payment.propertyId}
-                        </span>
-                      )}
-                      {payment.roomId != null && (
-                        <span className="data-pill border border-cyan-200 bg-cyan-50 text-cyan-800">
-                          Room ID {payment.roomId}
+                          Contract ID {payment.tenancyContractId}
                         </span>
                       )}
                       {payment.bedUnitId != null && (
@@ -475,6 +444,9 @@ export default function PaymentsPage() {
                           Bed ID {payment.bedUnitId}
                         </span>
                       )}
+                      <span className="data-pill border border-slate-200 bg-white text-slate-700">
+                        Recorded by {payment.createdByUsername}
+                      </span>
                     </div>
 
                     <div className="mt-5 flex flex-wrap gap-2">
@@ -483,14 +455,13 @@ export default function PaymentsPage() {
                         onClick={() => {
                           setEditingId(payment.id);
                           setForm({
-                            txnNo: payment.txnNo,
-                            amount: String(payment.amount),
+                            tenancyContractId:
+                              payment.tenancyContractId == null ? "" : String(payment.tenancyContractId),
                             paymentDate: payment.paymentDate,
-                            paymentMode: payment.paymentMode ?? "",
+                            dueDate: payment.dueDate,
+                            amountPaid: String(payment.amountPaid),
+                            amountPending: String(payment.amountPending),
                             status: payment.status,
-                            propertyId: payment.propertyId == null ? "" : String(payment.propertyId),
-                            roomId: payment.roomId == null ? "" : String(payment.roomId),
-                            bedUnitId: payment.bedUnitId == null ? "" : String(payment.bedUnitId),
                           });
                         }}
                         className="secondary-action action-button-sm"

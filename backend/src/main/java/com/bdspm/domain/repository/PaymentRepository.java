@@ -15,10 +15,16 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     boolean existsByTxnNoAndIdNot(String txnNo, Long id);
 
-    @EntityGraph(attributePaths = {"createdBy", "property", "room", "bedUnit"})
+    @EntityGraph(attributePaths = {
+            "createdBy", "property", "room", "bedUnit",
+            "tenancyContract", "tenancyContract.property", "tenancyContract.room", "tenancyContract.bedUnit"
+    })
     List<Payment> findAllByOrderByCreatedAtDesc();
 
-    @EntityGraph(attributePaths = {"createdBy", "property", "room", "bedUnit"})
+    @EntityGraph(attributePaths = {
+            "createdBy", "property", "room", "bedUnit",
+            "tenancyContract", "tenancyContract.property", "tenancyContract.room", "tenancyContract.bedUnit"
+    })
     @Query("select p from Payment p where p.id = :id")
     Optional<Payment> findDetailedById(@Param("id") Long id);
 }

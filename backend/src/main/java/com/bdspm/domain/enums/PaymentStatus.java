@@ -2,5 +2,7 @@ package com.bdspm.domain.enums;
 
 public enum PaymentStatus {
     PENDING,
-    VERIFIED
+    HALF_PAID,
+    PAID,
+    OVERDUE
 }

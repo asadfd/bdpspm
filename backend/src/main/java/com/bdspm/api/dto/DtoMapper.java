@@ -4,6 +4,7 @@ import com.bdspm.domain.entity.BedUnit;
 import com.bdspm.domain.entity.Payment;
 import com.bdspm.domain.entity.Property;
 import com.bdspm.domain.entity.Room;
+import com.bdspm.domain.entity.TenancyContract;
 
 import java.util.List;
 
@@ -60,21 +61,47 @@ public final class DtoMapper {
     }
 
     public static PaymentDto toPaymentDto(Payment payment) {
+        TenancyContract contract = payment.getTenancyContract();
         return new PaymentDto(
                 payment.getId(),
-                payment.getTxnNo(),
-                payment.getAmount(),
+                contract == null ? null : contract.getId(),
+                contract == null ? null : contract.getTenantName(),
                 payment.getPaymentDate(),
-                payment.getPaymentMode(),
+                payment.getDueDate(),
+                payment.getAmountPaid(),
+                payment.getAmountPending(),
                 payment.getStatus(),
                 payment.getProperty() == null ? null : payment.getProperty().getId(),
                 payment.getProperty() == null ? null : payment.getProperty().getName(),
                 payment.getRoom() == null ? null : payment.getRoom().getId(),
                 payment.getRoom() == null ? null : payment.getRoom().getName(),
                 payment.getBedUnit() == null ? null : payment.getBedUnit().getId(),
+                contract == null ? null : contract.getStatus().name(),
                 payment.getCreatedBy().getId(),
                 payment.getCreatedBy().getUsername(),
                 payment.getCreatedAt()
+        );
+    }
+
+    public static TenancyContractDto toTenancyContractDto(TenancyContract contract) {
+        return new TenancyContractDto(
+                contract.getId(),
+                contract.getTenantName(),
+                contract.getTenantGovernmentId(),
+                contract.getTenantPhoneNumber(),
+                contract.getProperty().getId(),
+                contract.getProperty().getName(),
+                contract.getRoom().getId(),
+                contract.getRoom().getName(),
+                contract.getBedUnit().getId(),
+                contract.getBedUnit().getStatus(),
+                contract.getRentAmount(),
+                contract.getStartDate(),
+                contract.getEndDate(),
+                contract.getStatus(),
+                contract.isEndedImmediately(),
+                contract.getActualEndDate(),
+                contract.getCreatedAt()
         );
     }
 }
